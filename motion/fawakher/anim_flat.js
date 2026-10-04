@@ -305,34 +305,78 @@ function s5(T) {
 const ARAB = [[47.9, 29.5], [48.5, 28.0], [49.6, 26.9], [50.2, 26.2], [50.8, 25.0], [50.8, 24.7], [51.2, 26.1], [51.6, 25.3], [51.6, 24.5], [52.5, 24.2], [54.0, 24.1], [55.5, 25.5], [56.1, 26.2], [56.4, 25.0], [56.4, 24.6], [57.8, 23.7], [58.8, 23.5], [59.8, 22.5], [58.6, 20.5], [57.8, 19.0], [56.6, 18.0], [55.0, 17.0], [52.2, 15.6], [49.0, 14.6], [45.0, 13.0], [43.5, 12.7], [43.2, 13.3], [42.8, 15.3], [42.7, 16.5], [41.7, 17.9], [40.8, 19.7], [39.2, 21.5], [38.5, 23.6], [37.4, 24.7], [36.6, 26.0], [35.1, 28.0], [34.9, 29.5], [36.5, 29.9], [37.5, 30.5], [38.0, 31.5], [39.2, 32.2], [42.0, 31.0], [44.7, 29.2], [46.5, 29.1], [47.9, 29.5]];
 const KW = [47.98, 29.37], QS = [43.97, 26.33];
 const R6 = rng(61); const farms = []; while (farms.length < 34) { const lo = 38 + R6() * 20, la = 16 + R6() * 14; let ins = false; for (let i = 0, j = ARAB.length - 1; i < ARAB.length; j = i++) { const [xi, yi] = ARAB[i], [xj, yj] = ARAB[j]; if ((yi > la) !== (yj > la) && lo < (xj - xi) * (la - yi) / (yj - yi) + xi) ins = !ins; } if (ins) farms.push([lo, la, R6()]); }
+const COUNTRIES = {
+  'السعودية': [[34.9, 29.5], [36.5, 29.9], [37.5, 30.5], [38.0, 31.5], [39.2, 32.2], [42.0, 31.0], [44.7, 29.2], [46.5, 29.1], [47.7, 28.5], [48.4, 28.55], [48.5, 28.0], [49.6, 26.9], [50.2, 26.2], [50.8, 25.0], [50.8, 24.75], [51.2, 24.6], [51.6, 24.5], [51.6, 24.3], [52.6, 22.9], [55.2, 22.7], [55.7, 22.0], [55.0, 20.0], [52.0, 19.0], [48.0, 18.0], [46.0, 17.3], [43.3, 17.0], [42.7, 16.5], [41.7, 17.9], [40.8, 19.7], [39.2, 21.5], [38.5, 23.6], [37.4, 24.7], [36.6, 26.0], [35.1, 28.0]],
+  'الكويت': [[46.5, 29.1], [47.9, 29.5], [48.4, 28.55], [47.7, 28.5]],
+  'قطر': [[50.8, 24.75], [50.8, 25.6], [51.0, 26.1], [51.6, 25.3], [51.6, 24.5], [51.2, 24.6]],
+  'البحرين': [[50.42, 26.3], [50.68, 26.3], [50.64, 25.75], [50.48, 25.8]],
+  'الإمارات': [[51.6, 24.3], [52.5, 24.2], [54.0, 24.1], [55.5, 25.5], [56.1, 26.1], [56.35, 24.9], [55.9, 24.2], [55.2, 22.7], [52.6, 22.9]],
+  'عُمان': [[56.35, 24.9], [56.4, 24.6], [57.8, 23.7], [58.8, 23.5], [59.8, 22.5], [58.6, 20.5], [57.8, 19.0], [56.6, 18.0], [55.0, 17.0], [53.1, 16.6], [52.0, 19.0], [55.0, 20.0], [55.7, 22.0], [55.2, 22.7], [55.9, 24.2]],
+  'اليمن': [[53.1, 16.6], [52.2, 15.6], [49.0, 14.6], [45.0, 13.0], [43.5, 12.7], [43.2, 13.3], [42.8, 15.3], [42.7, 16.5], [43.3, 17.0], [46.0, 17.3], [48.0, 18.0], [52.0, 19.0]],
+};
+const NORTH = [[30, 36], [30, 31], [34.9, 29.5], [36.5, 29.9], [37.5, 30.5], [38.0, 31.5], [39.2, 32.2], [42.0, 31.0], [44.7, 29.2], [46.5, 29.1], [47.9, 29.5], [48.0, 30.0], [48.6, 30.0], [49.0, 30.3], [50.1, 30.1], [50.8, 28.9], [51.4, 27.9], [52.6, 27.4], [53.7, 26.8], [54.8, 26.5], [55.6, 26.9], [56.3, 27.2], [57.3, 25.7], [58.8, 25.5], [61.6, 25.2], [64, 25], [64, 36]];
+const AFRICA = [[30, 12], [30, 31], [32.5, 29.9], [33.6, 27.5], [35.5, 24.0], [37.2, 21.0], [38.5, 18.0], [39.7, 15.3], [41.6, 13.4], [43.3, 11.8], [44.5, 10.5], [30, 10.5]];
+const GCC = ['الكويت', 'السعودية', 'البحرين', 'قطر', 'الإمارات', 'عُمان'];
+const LABELS = [['الكويت', 47.2, 30.15, 23.0], ['البحرين', 49.35, 26.75, 23.15], ['قطر', 52.5, 24.95, 23.25], ['الإمارات', 54.6, 23.1, 23.35], ['عُمان', 56.9, 21.0, 23.45], ['السعودية', 44.6, 23.9, 23.55]];
 function s6(T) {
   bg(K.white, T);
   const mapOut = P(T, 28.3, 28.9);
   if (mapOut < 1) {
-    const en = P(T, 19.9, 20.8), zoom = 1 + 1.4 * ioC(P(T, 27.0, 28.6));
-    const tilt = lerp(0.2, 0.62, oC(en)), k = 38 * lerp(0.8, 1, oE(en)), cx = 540, cy = 1180;
-    const flat = (lo, la) => [(lo - 47) * k * 0.9, -(la - 22.5) * k];
-    const q0 = flat(QS[0], QS[1]);
-    const pr = (lo, la, dz = 0) => { let [x, y] = flat(lo, la); x = (x - q0[0]) * zoom + q0[0] * (1 - (zoom - 1) / 1.4); y = (y - q0[1]) * zoom + q0[1] * (1 - (zoom - 1) / 1.4); return [cx + x, cy + y * Math.cos(tilt) + dz]; };
-    ctx.save(); ctx.globalAlpha *= clamp(en * 2) * (1 - mapOut);
-    const top = ARAB.map(p => pr(p[0], p[1])), side = ARAB.map(p => pr(p[0], p[1], 34 * zoom));
-    ctx.save(); ctx.shadowColor = 'rgba(31,56,45,0.18)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 40;
-    ctx.beginPath(); side.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]))); ctx.closePath(); ctx.fillStyle = K.green2; ctx.fill(); ctx.restore();
-    for (let i = 0; i < top.length - 1; i++) { ctx.beginPath(); ctx.moveTo(top[i][0], top[i][1]); ctx.lineTo(top[i + 1][0], top[i + 1][1]); ctx.lineTo(side[i + 1][0], side[i + 1][1]); ctx.lineTo(side[i][0], side[i][1]); ctx.closePath(); ctx.fillStyle = K.green2; ctx.fill(); }
-    ctx.beginPath(); top.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]))); ctx.closePath(); ctx.fillStyle = K.lightg; ctx.fill(); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 4; ctx.stroke();
-    // Gulf label
-    const gl = P(T, 22.9, 23.3) * (1 - P(T, 24.5, 24.9)); if (gl > 0) { const q = pr(52.4, 27.4); ctx.save(); ctx.globalAlpha *= gl; text('الخليج', q[0], q[1], 46, K.leaf, { w: 800 }); ctx.restore(); }
+    const en = P(T, 19.9, 20.5);
+    const CX = 540, CY = 1210, CW = 940, CH = 880, x0 = CX - CW / 2, y0 = CY - CH / 2;
+    const zoom = 1 + 2.2 * ioC(P(T, 26.95, 28.5));
+    const k = 38.5, mx = 47.4, my = 22.6;
+    const base = (lo, la) => [CX + (lo - mx) * k * 0.9, CY - (la - my) * k];
+    const qb = base(QS[0], QS[1]);
+    const pr = (lo, la) => { const q = base(lo, la); const zx = qb[0] + (q[0] - qb[0]) * zoom, zy = qb[1] + (q[1] - qb[1]) * zoom; const f = (zoom - 1) / 2.2; return [zx + (CX - qb[0]) * f, zy + (CY - qb[1]) * f]; };
+    const path = pts => { ctx.beginPath(); pts.forEach((p, i) => { const q = pr(p[0], p[1]); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath(); };
+    ctx.save(); ctx.globalAlpha *= 1 - mapOut;
+    popIn(CX, CY, en, () => {}, {});
+    const s0 = lerp(0.85, 1, oB(en)); ctx.translate(CX, CY); ctx.scale(s0, s0); ctx.translate(-CX, -CY); ctx.globalAlpha *= clamp(en * 2.5);
+    card(x0, y0, CW, CH, 44, '#E1ECE8', { blur: 60 });
+    ctx.save(); rr(x0, y0, CW, CH, 44); ctx.clip();
+    // water texture lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+    for (let yy = y0 + 30; yy < y0 + CH; yy += 46) { ctx.beginPath(); for (let xx = x0; xx <= x0 + CW; xx += 20) ctx.lineTo(xx, yy + Math.sin(xx / 40 + T * 1.5 + yy) * 4); ctx.stroke(); }
+    // neighbouring land
+    [NORTH, AFRICA].forEach(L => { path(L); ctx.fillStyle = '#EFEBE1'; ctx.fill(); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 3; ctx.stroke(); });
+    const gccOn = P(T, 22.9, 23.5), sau = P(T, 24.65, 25.2) * (1 - P(T, 28.0, 28.4));
+    Object.entries(COUNTRIES).forEach(([name, pts], i) => {
+      const ap = P(T, 20.0 + i * 0.12, 20.45 + i * 0.12); if (ap <= 0) return;
+      const isG = GCC.includes(name);
+      const hx = h => [1, 3, 5].map(j => parseInt(h.slice(j, j + 2), 16)), mx3 = (A, B, t) => A.map((v, j) => v + (B[j] - v) * t);
+      let c = hx('#F6F4EE');
+      if (isG) c = mx3(c, hx('#C3DDCB'), gccOn);
+      if (name === 'السعودية') c = mx3(c, hx('#7FB596'), sau);
+      else if (isG) c = mx3(c, hx('#E6EFE8'), sau);
+      const fill = `rgb(${c.map(Math.round).join(',')})`;
+      ctx.save(); ctx.globalAlpha *= ap; path(pts); ctx.fillStyle = fill; ctx.fill();
+      ctx.strokeStyle = isG && gccOn > 0 ? mixc('#FFFFFF', K.leaf, gccOn * 0.85) : '#FFFFFF'; ctx.lineWidth = isG && gccOn > 0 ? 3.5 : 3; ctx.setLineDash(name === 'السعودية' ? [] : []); ctx.stroke(); ctx.restore();
+    });
+    // pulse wave over the Gulf on "في الخليج"
+    const wv = P(T, 22.95, 23.9);
+    if (wv > 0 && wv < 1) { const c = pr(51.5, 26.8); ctx.save(); ctx.globalAlpha *= 1 - wv; ctx.strokeStyle = K.gold; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(c[0], c[1], 40 + wv * 520, 0, 7); ctx.stroke(); ctx.restore(); }
     // farms
-    farms.forEach(([lo, la, r]) => { const p = P(T, 21.0 + r * 2.2, 21.25 + r * 2.2); if (p <= 0) return; const q = pr(lo, la); ctx.save(); ctx.translate(q[0], q[1]); ctx.scale(oB(p), oB(p) * Math.cos(tilt) + 0.2); circle(0, 0, 11, K.leaf); ctx.restore(); });
-    // Kuwait origin + journey
+    farms.forEach(([lo, la, r]) => { const p = P(T, 21.0 + r * 1.8, 21.3 + r * 1.8); if (p <= 0) return; const q = pr(lo, la); ctx.save(); ctx.translate(q[0], q[1]); ctx.scale(oB(p), oB(p)); circle(0, 0, 8, K.leaf); ctx.restore(); });
+    // water label
+    const wl = P(T, 22.95, 23.4) * (1 - P(T, 26.9, 27.2));
+    if (wl > 0) { const q = pr(52.9, 27.2); ctx.save(); ctx.globalAlpha *= wl; ctx.translate(q[0], q[1]); ctx.rotate(-0.42); text('الخليج العربي', 0, 0, 34, '#5E8E9A', { w: 700 }); ctx.restore(); }
+    ctx.restore();
+    // country labels (outside clip so chips can float)
+    LABELS.forEach(([n, lo, la, t0]) => {
+      const p = P(T, t0, t0 + 0.35) * (1 - P(T, 24.55, 24.85)); if (p <= 0) return;
+      const q = pr(lo, la); chip(q[0], q[1], n, p, { size: n === 'السعودية' ? 34 : 28, bg: '#FFFFFF', col: K.green });
+    });
+    // journey Kuwait -> Qassim
     const kq = pr(KW[0], KW[1]), qq = pr(QS[0], QS[1]);
-    popIn(kq[0], kq[1], P(T, 24.65, 25.0), () => pinIcon(0, 0, 80, K.green), { dy: 120, s0: 0.5 });
+    popIn(kq[0], kq[1], P(T, 24.65, 25.0) * (1 - P(T, 26.95, 27.3)), () => pinIcon(0, 0, 72, K.green), { dy: 120, s0: 0.5 });
     const jp = P(T, 24.9, 25.9);
-    if (jp > 0) { const arc = quad(kq, [(kq[0] + qq[0]) / 2, Math.min(kq[1], qq[1]) - 170 * zoom], qq, 40); ctx.save(); ctx.setLineDash([16, 14]); ctx.strokeStyle = K.gold; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineDashOffset = -T * 40; if (pathPartial(arc, oC(jp))) ctx.stroke(); ctx.restore(); }
+    if (jp > 0) { const arc = quad(kq, [(kq[0] + qq[0]) / 2, Math.min(kq[1], qq[1]) - 150], qq, 40); ctx.save(); ctx.globalAlpha *= 1 - P(T, 26.95, 27.3); ctx.setLineDash([16, 14]); ctx.strokeStyle = K.gold; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineDashOffset = -T * 40; if (pathPartial(arc, oC(jp))) ctx.stroke(); ctx.restore(); }
     const sp = P(T, 25.7, 26.1);
-    if (sp > 0) { for (let r = 0; r < 2; r++) { const u = ((T - 25.7) * 0.9 + r * 0.5) % 1; ctx.save(); ctx.globalAlpha *= (1 - u) * sp; ctx.strokeStyle = K.gold; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(qq[0], qq[1], 20 + u * 110, (20 + u * 110) * Math.cos(tilt), 0, 0, 7); ctx.stroke(); ctx.restore(); } }
-    popIn(qq[0], qq[1], sp, () => pinIcon(0, 0, 110, K.gold), { dy: 160, s0: 0.4 });
-    chip(qq[0] - 10, qq[1] - 200, 'السعودية', P(T, 25.6, 26.0) * (1 - P(T, 26.9, 27.2)), { size: 40, bg: '#FFFFFF', col: K.green });
+    if (sp > 0) { for (let r = 0; r < 2; r++) { const u = ((T - 25.7) * 0.9 + r * 0.5) % 1; ctx.save(); ctx.globalAlpha *= (1 - u) * sp; ctx.strokeStyle = K.gold; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(qq[0], qq[1], 20 + u * 100, 0, 7); ctx.stroke(); ctx.restore(); } }
+    popIn(qq[0], qq[1], sp, () => pinIcon(0, 0, 100, K.gold), { dy: 160, s0: 0.4 });
+    chip(qq[0], qq[1] - 170, 'السعودية', P(T, 25.6, 26.0) * (1 - P(T, 26.9, 27.2)), { size: 40, bg: K.green, col: '#FFFFFF' });
+    chip(qq[0], qq[1] + 70, 'القصيم', P(T, 27.6, 28.0), { size: 40, bg: K.gold, col: K.ink });
     ctx.restore();
   }
   // Qassim farms card
