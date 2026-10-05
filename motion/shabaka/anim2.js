@@ -1,5 +1,5 @@
 // الشبكة العالمية — "القرار الغلط" — matches the reference reels: white, airy, thin type, typewriter caret, green highlight boxes.
-const W = 1080, H = 1920, DUR = 40.0;
+const W = 1080, H = 1920, DUR = 41.9;
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 const G = '#6EC148', G2 = '#8FD97A', GL = '#EEF8E9', GRAY = '#787878', GRAYL = '#CFCFCF', OR = '#F0941D', WHITE = '#FFFFFF', SOIL = '#3B2A1E';
@@ -110,7 +110,7 @@ const ICON = {
 };
 
 // ---------- logo, background ----------
-const IMG = {}; const IMGS = ['gear', 'leaf', 'icon'];
+const IMG = {}; const IMGS = ['gear', 'leaf', 'icon', 'leaf_only'];
 function logoTop(T) { const a = P(T, 0, 0.6) * (1 - P(T, 37.0, 37.35)); if (a <= 0 || !IMG.icon) return; const w = 190, im = IMG.icon, h = w * im.height / im.width; ctx.save(); ctx.globalAlpha = a; ctx.drawImage(im, 540 - w / 2, 250, w, h); ctx.restore(); }
 // soil strip (like the reference's real soil) — textured, procedurally
 const soilTex = (() => { const c = document.createElement('canvas'); c.width = 1080; c.height = 260; const g = c.getContext('2d'); const r = rng(77);
@@ -302,7 +302,7 @@ function s8(T) {
 }
 // L9 34.62–36.99 "قرارك اليوم.. يحدد نتيجتك بعدين."
 function s9(T) {
-  const a = win(T, 34.45, 37.4, 0.25, 0.35); if (a <= 0) return;
+  const a = win(T, 34.45, 37.25, 0.25, 0.3); if (a <= 0) return;
   ctx.save(); ctx.globalAlpha *= a;
   typeLine(T, [['قرارك', 'n'], ['اليوم..', 'box']], 880, 78, 34.6, 35.4);
   const p2 = P(T, 35.8, 36.3);
@@ -313,16 +313,41 @@ function s9(T) {
   pop(540, 1300, P(T, 36.3, 36.7), () => { circle(0, 0, 110, G); for (let k = 0; k < 2; k++) { ctx.save(); ctx.globalAlpha *= 0.4; ring(0, 0, 126 + k * 16, G2, 2); ctx.restore(); } check(0, 6, 120, P(T, 36.45, 36.9)); }, { s0: 0.2 });
   ctx.restore();
 }
-// END 37.0–40.0 leaf flies in, gear rotates in, company name (reference ending)
+// END 37.0–41.9 — reference ending: the logo's own leaf sweeps in big with motion blur, turns upright,
+// shrinks back into place; the gear fades in behind it; company name fades in line by line.
+const LOGO = { w: 520, cy: 860 };
+function leafState(t) { // centre x,y, scale (relative to final), rotation
+  const k = LOGO.w / 1480, iw = 1480 * k, ih = 1240 * k, tlx = 540 - iw / 2, tly = LOGO.cy - ih / 2;
+  const fx = tlx + (170 + 650) * k, fy = tly + (440 + 405) * k;
+  const A = [-420, 1180, 2.7, -0.10], B = [580, 760, 2.15, -0.95], Cc = [fx, fy, 1, 0];
+  const pa = P(t, 37.0, 37.65), pb = P(t, 37.65, 38.45);
+  if (pb <= 0) { const e = oC(pa); return A.map((v, i) => lerp(v, B[i], e)); }
+  const e = ioC(pb); return B.map((v, i) => lerp(v, Cc[i], e)).concat([]);
+}
+function drawLeafAt(st, alpha = 1) {
+  const im = IMG.leaf_only; if (!im) return; const k = LOGO.w / 1480 * st[2], w = im.width * k, h = im.height * k;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(st[0], st[1]); ctx.rotate(st[3]); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
+}
 function s10(T) {
-  const p = P(T, 37.0, 37.9); if (p <= 0 || !IMG.gear) return;
-  const lp = ioC(p), s = 560, im = IMG.icon, h = s * im.height / im.width;
-  if (p < 1) leaf(lerp(1250, 600, lp), lerp(1250, 930, lp) - Math.sin(Math.PI * lp) * 260, lerp(150, 330, lp), lerp(2.4, -0.2, lp), G);
-  const gp = P(T, 37.6, 38.4), lf = P(T, 37.75, 38.05);
-  if (gp > 0) { ctx.save(); ctx.globalAlpha = clamp(gp * 2); ctx.translate(540, 880); ctx.rotate((1 - oE(gp)) * -2.4); const k = lerp(0.6, 1, oE(gp)); ctx.scale(k, k); ctx.drawImage(IMG.gear, -s / 2, -h / 2, s, h); ctx.restore(); }
-  if (lf > 0) { ctx.save(); ctx.globalAlpha = lf; ctx.drawImage(IMG.leaf, 540 - s / 2, 880 - h / 2, s, h); ctx.restore(); }
-  const tp = P(T, 38.3, 38.9);
-  if (tp > 0) { ctx.save(); ctx.globalAlpha = tp; const dy = (1 - oE(tp)) * 30; txt('شركة الشبكة العالمية', 540, 1210 + dy, 70, GRAY, 800); txt('للمقاولات الزراعية', 540, 1300 + dy, 46, GRAY, 600); txt('Alshabaka Global Company', 540, 1378, 38, GRAY, 400, 'center', 'ltr'); ctx.restore(); }
+  if (T < 37.0 || !IMG.gear) return;
+  const k = LOGO.w / 1480, iw = 1480 * k, ih = 1240 * k;
+  // gear first (behind the leaf)
+  const gp = P(T, 38.25, 38.9);
+  if (gp > 0) {
+    ctx.save(); ctx.translate(540, LOGO.cy); ctx.rotate(lerp(-0.28, 0, oC(gp))); const sc = lerp(0.93, 1, oC(gp)); ctx.scale(sc, sc);
+    ctx.globalAlpha = clamp(gp * 1.6); ctx.drawImage(IMG.gear, -iw / 2, -ih / 2, iw, ih);
+    if (gp < 1) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = `rgba(255,255,255,${0.65 * (1 - oC(gp))})`; ctx.fillRect(-iw / 2, -ih / 2, iw, ih); }
+    ctx.restore();
+  }
+  // motion-blurred leaf
+  const st = leafState(T);
+  const fast = 1 - P(T, 37.55, 38.2);
+  if (fast > 0) for (let i = 6; i >= 1; i--) drawLeafAt(leafState(T - i * 0.014), 0.10 * fast);
+  drawLeafAt(st, clamp(P(T, 37.0, 37.08) * 1));
+  // company name
+  const t1 = P(T, 38.9, 39.45), t2 = P(T, 39.35, 39.9);
+  if (t1 > 0) { ctx.save(); ctx.globalAlpha = oC(t1); txt('شركة الشبكة العالمية', 540, LOGO.cy + 300 + (1 - oE(t1)) * 22, 66, GRAY, 800); ctx.restore(); }
+  if (t2 > 0) { ctx.save(); ctx.globalAlpha = oC(t2); txt('للمقاولات الزراعية', 540, LOGO.cy + 375 + (1 - oE(t2)) * 18, 40, GRAY, 600); ctx.restore(); }
 }
 
 function render(T) {
