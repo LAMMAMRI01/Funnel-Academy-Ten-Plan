@@ -6,6 +6,18 @@ import { z } from 'zod';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const NODE = process.execPath;
+// Node CLIs are run through node itself (no shell, no .cmd shims) so the same code works on Windows.
+const HF_CLI = path.join(HERE, 'node_modules', 'hyperframes', 'bin', 'hyperframes.mjs');
+const remotionCli = dir => [path.join(dir, 'node_modules', '@remotion', 'cli', 'remotion-cli.js'),
+  path.join(HERE, 'node_modules', '@remotion', 'cli', 'remotion-cli.js')].find(f => fs.existsSync(f));
+const PYTHON = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
+const WHISPER_SCRIPT = process.env.WHISPER_SCRIPT || '';
+const GSAP_LOCAL = process.env.GSAP_LOCAL || path.join(HERE, 'node_modules', 'gsap', 'dist', 'gsap.min.js');
+const whisperCmd = args => WHISPER_SCRIPT ? [PYTHON, [WHISPER_SCRIPT, ...args]] : ['whisper', args];
 
 const CHROME = process.env.REMOTION_CHROME || process.env.PUPPETEER_EXECUTABLE_PATH || '';
 const TIMEOUT = Number(process.env.MOTION_TIMEOUT_MS || 30 * 60 * 1000);
@@ -46,12 +58,12 @@ server.tool('yt_dlp', 'Download a video or audio with yt-dlp.',
     const a = ['-P', out_dir, '-o', '%(title).80s [%(id)s].%(ext)s', '--no-playlist'];
     if (audio_only) a.push('-x', '--audio-format', 'mp3');
     else if (max_height) a.push('-f', `bv*[height<=${max_height}]+ba/b[height<=${max_height}]`, '--merge-output-format', 'mp4');
-    return reply(await run('yt-dlp', [...a, url]));
+    return reply(await run(PYTHON, ['-m', 'yt_dlp', ...a, url]));  // via python: works even when Scripts/ is not on PATH
   });
 
 server.tool('whisper', 'Transcribe speech in an audio/video file with timestamps; optional .srt output.',
   { file: z.string(), lang: z.string().default('ar').describe('ar, fr, en, …'), srt: z.string().optional() },
-  async ({ file, lang, srt }) => reply(await run('whisper', [file, '--lang', lang, ...(srt ? ['--srt', srt] : [])]), 30000));
+  async ({ file, lang, srt }) => reply(await run(...whisperCmd([file, '--lang', lang, ...(srt ? ['--srt', srt] : [])])), 30000));
 
 server.tool('remotion_render', 'Render a Remotion composition from a project folder.',
   {
@@ -59,10 +71,12 @@ server.tool('remotion_render', 'Render a Remotion composition from a project fol
     props: z.record(z.any()).optional().describe('input props as an object'),
   },
   async ({ project_dir, entry, composition, out, props }) => {
-    const a = ['remotion', 'render', entry, composition, out, '--log=error'];
+    const cli = remotionCli(project_dir);
+    if (!cli) return reply({ code: -1, out: 'Remotion not found: run npm install in the project folder.' });
+    const a = [cli, 'render', entry, composition, out, '--log=error'];
     if (CHROME) a.push(`--browser-executable=${CHROME}`);
     if (props) a.push(`--props=${JSON.stringify(props)}`);
-    return reply(await run('npx', a, { cwd: project_dir }));
+    return reply(await run(NODE, a, { cwd: project_dir }));
   });
 
 server.tool('hyperframes_init', 'Create a new HyperFrames (HTML + GSAP) project.',
@@ -72,11 +86,11 @@ server.tool('hyperframes_init', 'Create a new HyperFrames (HTML + GSAP) project.
     example: z.string().default('blank'),
   },
   async ({ parent_dir, name, resolution, example }) => {
-    const r = await run('npx', ['hyperframes', 'init', name, '--example', example, '--resolution', resolution, '--non-interactive', '--skip-skills'], { cwd: parent_dir });
+    const r = await run(NODE, [HF_CLI, 'init', name, '--example', example, '--resolution', resolution, '--non-interactive', '--skip-skills'], { cwd: parent_dir });
     // Offline GSAP: when GSAP_LOCAL points to gsap.min.js, use it instead of the CDN.
     const html = path.join(parent_dir, name, 'index.html');
-    if (r.code === 0 && process.env.GSAP_LOCAL && fs.existsSync(html)) {
-      fs.copyFileSync(process.env.GSAP_LOCAL, path.join(parent_dir, name, 'gsap.min.js'));
+    if (r.code === 0 && fs.existsSync(GSAP_LOCAL) && fs.existsSync(html)) {
+      fs.copyFileSync(GSAP_LOCAL, path.join(parent_dir, name, 'gsap.min.js'));
       fs.writeFileSync(html, fs.readFileSync(html, 'utf8').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/gsap@[^"']*\/gsap\.min\.js/g, 'gsap.min.js'));
       r.out += '\n[gsap.min.js copied locally]';
     }
@@ -85,17 +99,17 @@ server.tool('hyperframes_init', 'Create a new HyperFrames (HTML + GSAP) project.
 
 server.tool('hyperframes_render', 'Render a HyperFrames project to video.',
   { project_dir: z.string(), out: z.string(), format: z.enum(['mp4', 'webm', 'mov', 'gif']).default('mp4') },
-  async ({ project_dir, out, format }) => reply(await run('npx',
-    ['hyperframes', 'render', '-o', out, '--format', format, '--quiet'], { cwd: project_dir })));
+  async ({ project_dir, out, format }) => reply(await run(NODE,
+    [HF_CLI, 'render', '-o', out, '--format', format, '--quiet'], { cwd: project_dir })));
 
 server.tool('check_tools', 'Show which motion tools are installed and their versions.', {},
   async () => {
-    const checks = [['ffmpeg', ['-version']], ['yt-dlp', ['--version']], ['whisper', ['--help']],
-      ['npx', ['-y', '-p', '@remotion/cli@4', 'remotion', 'versions']], ['npx', ['hyperframes', '--version']]];
+    const checks = [['ffmpeg', ['-version']], [PYTHON, ['-m', 'yt_dlp', '--version']], whisperCmd(['--help']),
+      [NODE, [path.join(HERE, 'node_modules', '@remotion', 'cli', 'remotion-cli.js'), '--help']], [NODE, [HF_CLI, '--version']]];
     const lines = [];
     for (const [c, a] of checks) {
       const r = await run(c, a, { timeout: 60000 });
-      lines.push(`${r.code === 0 ? 'OK ' : 'ERR'} ${[c, ...a].join(' ')} → ${r.out.trim().split('\n')[0].slice(0, 120)}`);
+      lines.push(`${r.code === 0 ? 'OK ' : 'ERR'} ${[path.basename(c), ...a.map(x => path.basename(x))].join(' ')} → ${r.out.trim().split('\n')[0].slice(0, 120)}`);
     }
     return { content: [{ type: 'text', text: lines.join('\n') }] };
   });

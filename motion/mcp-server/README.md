@@ -12,7 +12,15 @@ One MCP server for: **ffmpeg, ffprobe, yt-dlp, Whisper, Remotion, HyperFrames**.
 | `hyperframes_init` / `hyperframes_render` | Create and render HyperFrames projects |
 | `check_tools` | Show what is installed |
 
-## Install
+## Windows: one command
+Open **PowerShell** and run:
+```powershell
+irm https://raw.githubusercontent.com/LAMMAMRI01/Funnel-Academy-Ten-Plan/claude/motion-video-start-77q5x2/motion/install-windows.ps1 | iex
+```
+It installs Node.js, Python, ffmpeg, yt-dlp, the Whisper model, Remotion and HyperFrames,
+then registers `motion-tools` in Claude Desktop and Claude Code. Restart Claude afterwards.
+
+## Install (manual / Linux)
 ```bash
 cd motion/mcp-server && npm install
 ```
